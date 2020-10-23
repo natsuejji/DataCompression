@@ -1,8 +1,11 @@
-# ncu data compression homework1
-#### 作業內容
-1. huffman coding
-2. arithmetic code QM encoder
+# ncu data compression homework
 
-#### option
-1. adaptive huffman
-2. arithmetic code QM decoder
+### 第一次作業 lossless 
+
+##### 作業內容
+1. huffman coding
+2. QM encoder
+
+##### option
+1. adaptive huffman coding
+2. QM decoder
