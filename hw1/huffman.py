@@ -18,7 +18,7 @@ class t_node:
         return str(self.symbol)
     def __repr__(self):
         return str(self.symbol)
-        
+
 class huffmanEncoder:
     def __init__(self, filename):
 
@@ -64,6 +64,21 @@ class huffmanEncoder:
         self.setCodeTable(self.root,'')
         #去掉internal symbol
         del self.table[-1]
+        #canonical huffman
+        self.table =sorted(self.table.items(), key = lambda item : len(item[1]))
+        prev = ''
+        code = 0
+        oldcodelen = 0
+        for idx, i in enumerate(self.table):
+            i = list(i)
+            if len(i[1]) > oldcodelen:
+                code <<=(len(i[1])-oldcodelen)
+            i[1] = format(code, "0%db" % len(i[1]))
+            code +=1
+            oldcodelen = len(i[1])
+            print(i[1])
+            i = tuple(i)
+        self.table = dict(self.table)
 
     def setCodeTable(self, node: t_node, code):
         #用遞迴的方法從root開始記錄每個symbol的Code
@@ -86,7 +101,7 @@ class huffmanEncoder:
                 code += self.table[int.from_bytes(byte, byteorder='big')]
                 byte = f.read(1)
         #設定新擋名
-        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\' + self.filename.split('\\')[-1].split('.')[0] + '.mumi'
+        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\' + self.filename.split('\\')[-1].split('.')[0] + '.bat'
 
         #把少於8個bit的補完
         padbitnum = 8 - len(code) % 8
@@ -101,21 +116,65 @@ class huffmanEncoder:
             byte = code[i:i+8]
             bytecode.append(int(byte,2))
         with open(newf, 'wb') as f:
+            #存入codebook長度
+            f.write(len(self.table).to_bytes(1,byteorder='big'))
+            #存入coodbook
+            for key, value in self.table.items():
+                f.write(int(key).to_bytes(1,byteorder='big'))
+                f.write(len(value).to_bytes(1,byteorder='big'))
+            #存入檔案內容
             f.write(bytecode)
+
+class huffmanDecoder:
+    '''
+        第1個byte是symbol數量
+        之後是 symbol codelength一直重複
+    '''
+    def __init__(self, filename):
+        self.table = {}
+        self.filename = filename
+        #讀取code book
+        with open(filename, 'rb') as f:
+            symbolnum = int.from_bytes(f.read(1), byteorder='big')
+            for i in range(symbolnum):
+                symbol = int.from_bytes(f.read(1), byteorder='big')
+                length = int.from_bytes(f.read(1), byteorder='big')
+                self.table[symbol] = length
+        #重建 canonical huffman code table
+        prev = ''
+        code = 0
+        oldcodelen = 0
+        for idx, i in self.table.items():
+            if i > oldcodelen:
+                code <<=(i-oldcodelen)
+            oldcodelen = i
+            i = format(code, "0%db" % i)
+            code +=1
         
         
 
-        
+    def decode(self):
+        pass
 
 if __name__ == "__main__":
-    basepath ='E:\\programming\\DataCompression\\'
+    basepath ='E:\\programming\\DataCompression'
+    #壓縮前
     test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
-    t = huffmanEncoder(test_imgpath[2])
-    t.encode()
-    
+    #壓縮後
+    test_batpath = glob.glob(basepath + '\\Data\\result\\*.bat')
+    '''
     for i in test_imgpath:
+        #壓縮
         t = huffmanEncoder(i)
         t.encode()
+        #解壓縮
+    '''
+    
+    encoder = huffmanEncoder(test_imgpath[0])
+    encoder.encode()
+
+    decoder = huffmanDecoder(basepath+'\\Data\\result\\'+test_imgpath[0].split('\\')[-1].split('.')[0] + '.bat')
+    decoder.decode()
     
 
     
