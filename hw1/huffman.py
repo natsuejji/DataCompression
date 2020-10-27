@@ -1,3 +1,4 @@
+import io
 import heapq
 import numpy as np
 import glob
@@ -66,7 +67,7 @@ class huffmanEncoder:
         del self.table[-1]
         #canonical huffman
         self.table =sorted(self.table.items(), key = lambda item : len(item[1]))
-        prev = ''
+        chuff = {}
         code = 0
         oldcodelen = 0
         for idx, i in enumerate(self.table):
@@ -76,10 +77,8 @@ class huffmanEncoder:
             i[1] = format(code, "0%db" % len(i[1]))
             code +=1
             oldcodelen = len(i[1])
-            print(i[1])
-            i = tuple(i)
-        self.table = dict(self.table)
-
+            chuff[i[0]] = i[1]
+        self.table = chuff
     def setCodeTable(self, node: t_node, code):
         #用遞迴的方法從root開始記錄每個symbol的Code
         if node.leftnode is not None:
@@ -92,16 +91,17 @@ class huffmanEncoder:
 
     def encode(self):
         code = ''
-
+        ii =0
         #開啟影像
         with open(self.filename, 'rb') as f:
             #每次讀取1KB後從Table找code再接成字串
             byte = f.read(1)
             while byte:
+                ii+=1
                 code += self.table[int.from_bytes(byte, byteorder='big')]
                 byte = f.read(1)
         #設定新擋名
-        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\' + self.filename.split('\\')[-1].split('.')[0] + '.bat'
+        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\compressed_' + self.filename.split('\\')[-1].split('.')[0] + '.mumi'
 
         #把少於8個bit的補完
         padbitnum = 8 - len(code) % 8
@@ -116,8 +116,10 @@ class huffmanEncoder:
             byte = code[i:i+8]
             bytecode.append(int(byte,2))
         with open(newf, 'wb') as f:
+
             #存入codebook長度
             f.write(len(self.table).to_bytes(1,byteorder='big'))
+            
             #存入coodbook
             for key, value in self.table.items():
                 f.write(int(key).to_bytes(1,byteorder='big'))
@@ -133,35 +135,54 @@ class huffmanDecoder:
     def __init__(self, filename):
         self.table = {}
         self.filename = filename
+        self.Lens = set()
+        self.decomp = []
         #讀取code book
         with open(filename, 'rb') as f:
             symbolnum = int.from_bytes(f.read(1), byteorder='big')
+            codebook = {}
             for i in range(symbolnum):
                 symbol = int.from_bytes(f.read(1), byteorder='big')
                 length = int.from_bytes(f.read(1), byteorder='big')
-                self.table[symbol] = length
-        #重建 canonical huffman code table
-        prev = ''
-        code = 0
-        oldcodelen = 0
-        for idx, i in self.table.items():
-            if i > oldcodelen:
-                code <<=(i-oldcodelen)
-            oldcodelen = i
-            i = format(code, "0%db" % i)
-            code +=1
-        
-        
-
-    def decode(self):
-        pass
+                codebook[symbol] = length
+                self.Lens.add(length)
+            #重建 canonical huffman code table
+            code = 0
+            oldcodelen = 0
+            for idx , i in codebook.items():
+                if i > oldcodelen:
+                    code <<=(i-oldcodelen)
+                oldcodelen = i
+                self.table[format(code, "0%db" % i)] = idx
+                code +=1
+            #解壓縮
+            buffer = ''
+            curLen = 0
+            while True :
+                curbyte = f.read(1)
+                if curbyte == b'':
+                    break
+                buffer += format(int(curbyte.hex(),16), '08b') 
+                for i in buffer:
+                    curLen+=1
+                    if curLen in self.Lens and buffer[:curLen] in self.table:
+                        self.decomp.append(self.table[buffer[:curLen]])
+                        buffer = buffer[curLen:]
+                        curLen = 0
+                curLen = 0
+    def saveAs(self):
+        print(len(self.decomp))
+        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\decompressed_' + self.filename.split('\\')[-1].split('.')[0] + '.raw'
+        with open(newf ,'wb') as f:
+            for i in self.decomp:
+                f.write(i.to_bytes(1, byteorder='big'))
+        return newf
 
 if __name__ == "__main__":
-    basepath ='E:\\programming\\DataCompression'
+    basepath ='C:\\Users\\leeyihan\\Desktop\\hw\\datacompresshw1'
     #壓縮前
     test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
     #壓縮後
-    test_batpath = glob.glob(basepath + '\\Data\\result\\*.bat')
     '''
     for i in test_imgpath:
         #壓縮
@@ -173,8 +194,14 @@ if __name__ == "__main__":
     encoder = huffmanEncoder(test_imgpath[0])
     encoder.encode()
 
-    decoder = huffmanDecoder(basepath+'\\Data\\result\\'+test_imgpath[0].split('\\')[-1].split('.')[0] + '.bat')
-    decoder.decode()
-    
+    #test_batpath = glob.glob(basepath + '\\Data\\result\\*.mumi')
+    decoder = huffmanDecoder(basepath+'\\Data\\result\\compressed_'+test_imgpath[0].split('\\')[-1].split('.')[0] + '.mumi')
+    newf = decoder.saveAs()
+
+    img = np.fromfile(newf, dtype=np.uint8, count = 256*256)
+    img = np.reshape(img,(256,256))
+    plt.imshow(img,cmap='gray')
+    plt.show()
+
 
     
