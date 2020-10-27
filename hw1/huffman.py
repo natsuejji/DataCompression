@@ -67,9 +67,13 @@ class huffmanEncoder:
         del self.table[-1]
         #canonical huffman
         self.table =sorted(self.table.items(), key = lambda item : len(item[1]))
+        a = tuple(self.table)
+        print(len(self.table[0][1]),len(self.table[-1][1]))
         chuff = {}
         code = 0
         oldcodelen = 0
+        
+
         for idx, i in enumerate(self.table):
             i = list(i)
             if len(i[1]) > oldcodelen:
@@ -79,6 +83,7 @@ class huffmanEncoder:
             oldcodelen = len(i[1])
             chuff[i[0]] = i[1]
         self.table = chuff
+        
     def setCodeTable(self, node: t_node, code):
         #用遞迴的方法從root開始記錄每個symbol的Code
         if node.leftnode is not None:
@@ -102,7 +107,6 @@ class huffmanEncoder:
                 byte = f.read(1)
         #設定新擋名
         newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\compressed_' + self.filename.split('\\')[-1].split('.')[0] + '.mumi'
-
         #把少於8個bit的補完
         padbitnum = 8 - len(code) % 8
         padbit = ''
@@ -116,6 +120,7 @@ class huffmanEncoder:
             byte = code[i:i+8]
             bytecode.append(int(byte,2))
         with open(newf, 'wb') as f:
+
 
             #存入codebook長度
             f.write(len(self.table).to_bytes(1,byteorder='big'))
@@ -171,8 +176,7 @@ class huffmanDecoder:
                         curLen = 0
                 curLen = 0
     def saveAs(self):
-        print(len(self.decomp))
-        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\decompressed_' + self.filename.split('\\')[-1].split('.')[0] + '.raw'
+        newf = '\\'.join(self.filename.split('\\')[:-2]) + '\\result\\de' + self.filename.split('\\')[-1].split('.')[0] + '.raw'
         with open(newf ,'wb') as f:
             for i in self.decomp:
                 f.write(i.to_bytes(1, byteorder='big'))
@@ -182,26 +186,14 @@ if __name__ == "__main__":
     basepath ='C:\\Users\\leeyihan\\Desktop\\hw\\datacompresshw1'
     #壓縮前
     test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
-    #壓縮後
-    '''
     for i in test_imgpath:
-        #壓縮
         t = huffmanEncoder(i)
         t.encode()
-        #解壓縮
-    '''
+    #壓縮後
+    test_muimipath = glob.glob(basepath + '\\Data\\result\\*.mumi')
+    for i in test_muimipath:
+        decoder = huffmanDecoder(i)
+        newf = decoder.saveAs()
+
     
-    encoder = huffmanEncoder(test_imgpath[0])
-    encoder.encode()
-
-    #test_batpath = glob.glob(basepath + '\\Data\\result\\*.mumi')
-    decoder = huffmanDecoder(basepath+'\\Data\\result\\compressed_'+test_imgpath[0].split('\\')[-1].split('.')[0] + '.mumi')
-    newf = decoder.saveAs()
-
-    img = np.fromfile(newf, dtype=np.uint8, count = 256*256)
-    img = np.reshape(img,(256,256))
-    plt.imshow(img,cmap='gray')
-    plt.show()
-
-
     
