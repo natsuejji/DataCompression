@@ -68,7 +68,6 @@ class huffmanEncoder:
         #canonical huffman
         self.table =sorted(self.table.items(), key = lambda item : len(item[1]))
         a = tuple(self.table)
-        print(len(self.table[0][1]),len(self.table[-1][1]))
         chuff = {}
         code = 0
         oldcodelen = 0
@@ -123,7 +122,7 @@ class huffmanEncoder:
 
 
             #存入codebook長度
-            f.write(len(self.table).to_bytes(1,byteorder='big'))
+            f.write(len(self.table).to_bytes(2,byteorder='big'))
             
             #存入coodbook
             for key, value in self.table.items():
@@ -144,7 +143,7 @@ class huffmanDecoder:
         self.decomp = []
         #讀取code book
         with open(filename, 'rb') as f:
-            symbolnum = int.from_bytes(f.read(1), byteorder='big')
+            symbolnum = int.from_bytes(f.read(2), byteorder='big')
             codebook = {}
             for i in range(symbolnum):
                 symbol = int.from_bytes(f.read(1), byteorder='big')
@@ -183,9 +182,25 @@ class huffmanDecoder:
         return newf
 
 if __name__ == "__main__":
+    '''
     basepath ='C:\\Users\\leeyihan\\Desktop\\hw\\datacompresshw1'
     #壓縮前
     test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
+    for i in test_imgpath:
+        t = huffmanEncoder(i)
+        t.encode()
+    #壓縮後
+    test_muimipath = glob.glob(basepath + '\\Data\\*.mumi')
+    for i in test_muimipath:
+        decoder = huffmanDecoder(i)
+        newf = decoder.saveAs()
+    '''
+    basepath ='E:\programming\DataCompression'
+    #壓縮前
+    dpcm = glob.glob(basepath + '\\Data\\RAW\\dpcm\\*.raw')
+    test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
+    test_imgpath.extend(dpcm)
+
     for i in test_imgpath:
         t = huffmanEncoder(i)
         t.encode()
@@ -194,6 +209,4 @@ if __name__ == "__main__":
     for i in test_muimipath:
         decoder = huffmanDecoder(i)
         newf = decoder.saveAs()
-
-    
     
