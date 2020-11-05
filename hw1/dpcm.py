@@ -1,7 +1,6 @@
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
-import cv2
 class DPCM:
     def __init__(self, filename, levels,upbound,lowbound):
         self.filename = filename
@@ -113,7 +112,7 @@ class DPCM:
         
         
 if __name__ == "__main__":
-    basepath ='E:\\programming\\DataCompression'
+    basepath ='C:\\Users\\leeyihan\\Desktop\\hw\\datacompresshw1'
     #data
     raws = glob.glob(basepath + '\\Data\\RAW\\*.raw')
     raws[:] = [x for x in raws if 'dpcm' not in x]
