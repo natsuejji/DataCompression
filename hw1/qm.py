@@ -23,7 +23,7 @@ class QM_Coder:
         self.__readQMTable()
     
     def __readQMTable(self):
-        qf = 'C:\\Users\\leeyihan\\Desktop\\hw\\datacompresshw1\\hw1\\qmstatus'
+        qf = 'D:\\Programming\\DataCompression\\hw1\\qmstatus'
         #找不到table就報錯
         if not os.path.exists(qf):
             raise IOError('{:s} does not exist.'.format(qf))
@@ -62,8 +62,9 @@ class QM_Coder:
         Qc=0x59EB #LMS prob
         A=0x10000
         C=0x0000
-        CT=11
-        ST=0
+        CT=11 #C&A left shift count
+        SC=0 #STACK COUNT
+        BP=0
         result = ''
         
         for i in img:
@@ -85,14 +86,41 @@ class QM_Coder:
                     while A < 0x8000:
                         A<<=1
                         C<<=1
-                        ct -=1
-                        if ct == 0:
+                        CT -=1
+                        
+                        if CT == 0:
                             #byte_out
-                            temp = C>>19
+                            t = C>>19
                             if t > 0xff:
-                                result += '1'  
+                                BP+=1
+                                #stuff 0
+                                if BP == 0xff:
+                                    result += '{0:b}'.format(BP)
+                                    BP=0
+                                
+                                #output stacked zeros
+                                while SC>0:
+                                    result += '{0:b}'.format(BP)
+                                    BP = 0
+                                    SC-=1
+                                result += '{0:b}'.format(BP)
+                                BP = t
                             else:
-                            ct = 8
+                                if t == 0xff:
+                                    SC+=1
+                                else:
+                                    #Output_stacked_0xffs
+                                    while SC>0:
+                                        result += '{0:b}'.format(BP)
+                                        BP = 0xff
+                                        result += '{0:b}'.format(BP)
+                                        BP = 0
+                                        SC-=1
+                                    result += '{0:b}'.format(BP)
+                                BP = t
+                            C = C & 0x7ffff
+                            CT = 8
+                            
             if currInputBit == LPS:
                 A = A-Qc
                 if A>=Qc:
@@ -110,11 +138,40 @@ class QM_Coder:
                 while A < 0x8000:
                     A<<=1
                     C<<=1
-                    ct -=1
-                    if ct==0:
-                        #byte_out
+                    CT -=1
                         
-                        ct =8
+                    if CT == 0:
+                        #byte_out
+                        t = C>>19
+                        if t > 0xff:
+                            BP+=1
+                            #stuff 0
+                            if BP == 0xff:
+                                result += '{0:b}'.format(BP)
+                                BP=0
+                                
+                            #output stacked zeros
+                            while SC>0:
+                                result += '{0:b}'.format(BP)
+                                BP = 0
+                                SC-=1
+                            result += '{0:b}'.format(BP)
+                            BP = t
+                        else:
+                            if t == 0xff:
+                                SC+=1
+                            else:
+                                #Output_stacked_0xffs
+                                while SC>0:
+                                    result += '{0:b}'.format(BP)
+                                    BP = 0xff
+                                    result += '{0:b}'.format(BP)
+                                    BP = 0
+                                    SC-=1
+                                result += '{0:b}'.format(BP)
+                            BP = t
+                        C = C & 0x7ffff
+                        CT = 8
 
 
         #把少於8個bit的補完
@@ -137,13 +194,13 @@ class QM_Coder:
     
     
 if __name__ == "__main__":
-    basepath ='C:\\Users\\leeyihan\\Desktop\\hw\\datacompresshw1'
+    basepath ='D:\\Programming\\DataCompression\\hw1'
     test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
     q = QM_Coder()
     for i in test_imgpath:
         isGray = False if '_b' in i or '_halftone' in i else True
         q.encode(i,isGray)
-        break
+        
     
     
 '''
