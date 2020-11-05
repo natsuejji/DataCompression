@@ -3,7 +3,7 @@ import glob
 import matplotlib.pyplot as plt
 import cv2
 class DPCM:
-    def __init__(self, filename, levels):
+    def __init__(self, filename, levels,upbound,lowbound):
         self.filename = filename
         self.ori = None
         self.result = None
@@ -11,6 +11,8 @@ class DPCM:
         self.reconstruct = None
         self.alpha = 0.97
         self.beta = 0.97
+        self.upbound = upbound
+        self.lowbound = lowbound
         #print(self.filename)
     def encode(self):
         self.ori = np.fromfile(self.filename,dtype=np.uint8,count= 256*256)
@@ -73,8 +75,8 @@ class DPCM:
         '''
         均勻量化
         '''
-        _max = 255
-        _min = -255
+        _max = self.upbound
+        _min = self.lowbound
         q = (_max-_min)/levels
         i=1
         while error>= (_min+q*i):
@@ -111,9 +113,18 @@ class DPCM:
         
         
 if __name__ == "__main__":
-    a = glob.glob('E:\\programming\\DataCompression\\Data\\RAW\\*.raw')
-    for i in a:
-        t = DPCM(i,8)
+    basepath ='E:\\programming\\DataCompression'
+    #data
+    raws = glob.glob(basepath + '\\Data\\RAW\\*.raw')
+    raws[:] = [x for x in raws if 'dpcm' not in x]
+    for i in raws:
+        if '_b' in i or '_halftone' in i:
+            upbound, lowbound = 1, -1
+            levels = 2
+        else:
+            upbound, lowbound = 255, -255
+            levels = 8
+        t = DPCM(i,levels,upbound,lowbound)
         t.encode()
-        #t.decode()
-        t.save()
+        t.decode()
+        t.show()

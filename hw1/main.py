@@ -4,12 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import glob
 
-def rundpcm(raws,levels):
+def rundpcm(raws):
+    raws[:] = [x for x in raws if 'dpcm' not in x]
     for i in raws:
-        t = dpcm.DPCM(i,levels)
+        if '_b' in i or '_halftone' in i:
+            upbound, lowbound = 1, -1
+            levels = 2
+        else:
+            upbound, lowbound = 255, -255
+            levels = 8
+        t = DPCM(i,levels,upbound,lowbound)
         t.encode()
-        #t.decode()
-        t.save()
+        t.decode()
+        t.show()
+
 
 def runhuffman(raws):
 
@@ -29,7 +37,7 @@ if __name__ == "__main__":
     raws = glob.glob(basepath + '\\Data\\RAW\\*.raw')
     raws[:] = [x for x in raws if 'dpcm' not in x]
     #使用dpcm
-    rundpcm(raws,8)
+    rundpcm(raws)
     #使用霍夫曼壓縮
     raws = glob.glob(basepath + '\\Data\\RAW\\*.raw')
     runhuffman(raws)
