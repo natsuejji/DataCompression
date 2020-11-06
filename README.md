@@ -7,5 +7,16 @@
 2. QM encoder
 
 ##### option
-1. adaptive huffman coding
-2. QM decoder
+1. adaptive huffman coding (沒有做)
+2. QM decoder (沒有做)
+
+##### 使用教學
+<pre>
+    usage: main.py [-h] --rootpath ROOTPATH
+
+    ncu data compression hw1
+
+    optional arguments:
+        -h, --help           show this help message and exit
+        --rootpath ROOTPATH  project root directory
+</pre>
