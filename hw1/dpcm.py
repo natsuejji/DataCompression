@@ -104,7 +104,7 @@ class DPCM:
                     f.write(int(i).to_bytes(1, byteorder='big'))
 
         if self.reconstruct is not None:
-            rfname = '\\'.join(self.filename.split('\\')[:-2]) + '\\raw\\dpcm_recostruct_' + self.filename.split('\\')[-1].split('.')[0] + '.raw'
+            rfname = '\\'.join(self.filename.split('\\')[:-2]) + '\\raw\\dpcm_reconstruct_' + self.filename.split('\\')[-1].split('.')[0] + '.raw'
             rf = np.reshape(self.reconstruct,(256*256)) 
             with open(rfname,'wb') as f:
                 for i in rf:
