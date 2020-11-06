@@ -142,7 +142,8 @@ class QM_Coder:
                 self.__ChangeState(False)
                 #renormalize
                 result = self.__renormalize_E(result)
-        
+        self.__saveEncodedFile(image,result)
+
     def decode(self):
         pass
     
