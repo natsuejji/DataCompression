@@ -21,9 +21,18 @@ class QM_Coder:
     def __init__(self):
         self.qmtable = []
         self.__readQMTable()
+        self.State =0
+        self.Qc=0x59EB #LMS prob
+        self.A=0x10000
+        self.C=0x0000
+        self.CT=11 #C&A left shift count
+        self.SC=0 #STACK COUNT
+        self.BP=0
+        self.MPS='1'
+        self.LPS='0'
     
     def __readQMTable(self):
-        qf = 'D:\\Programming\\DataCompression\\hw1\\qmstatus'
+        qf = 'E:\\programming\\DataCompression\\hw1\\qmstatus'
         #找不到table就報錯
         if not os.path.exists(qf):
             raise IOError('{:s} does not exist.'.format(qf))
@@ -33,147 +42,57 @@ class QM_Coder:
                 curr = ''.join(l.rsplit('\n')).split(' ')
                 temp = self.qmstatus(curr)
                 self.qmtable.append(temp)
-    def __findState(self, Qc, isInc) -> qmstatus:
-        n = 0
-        state = 0
+    def __ChangeState(self, isInc) -> qmstatus:
         for i in self.qmtable:
-            if i.qcHex == Qc:
+            if i.qcHex == self.Qc:
                 n = i.In if isInc else i.De
                 if n == 'S':
-                    return None
-                n = -1*int(n) if not isInc else int(n)
-
-                state = i.state +n
-                return self.qmtable[state]
-        raise 'not find next status'
-    def encode(self,image,isGray):
-        
-        #如果是灰階圖就弄成位元平面
-        if isGray:
-            img = bit_plane.Util.gray2bitplane(image,(256,256))
-            img = np.reshape(img,256*256*8)
-        #如果本來就是二值影像就直接讀取
-        else:
-            img = np.fromfile(image,dtype=np.uint8)
-            img = np.reshape(img,256*256)
-
-        LPS,MPS = '0','1'
-        State =0
-        Qc=0x59EB #LMS prob
-        A=0x10000
-        C=0x0000
-        CT=11 #C&A left shift count
-        SC=0 #STACK COUNT
-        BP=0
-        result = ''
-        
-        for i in img:
-            currInputBit = str(int(i))
-            if currInputBit == MPS:
-                A = A-Qc
-                if A<0x8000:
-                    if A<Qc:
-                        C+=A
-                        A=Qc
-                    #change Qn state
-                    newSatate = self.__findState(Qc, True)
-                    if newSatate == None:
-                        LPS,MPS=MPS,LPS
-                    else:
-                        State = newSatate.state                        
-                        Qc = newSatate.qcHex
-                    #renormalize
-                    while A < 0x8000:
-                        A<<=1
-                        C<<=1
-                        CT -=1
-                        
-                        if CT == 0:
-                            #byte_out
-                            t = C>>19
-                            if t > 0xff:
-                                BP+=1
-                                #stuff 0
-                                if BP == 0xff:
-                                    result += '{0:b}'.format(BP)
-                                    BP=0
-                                
-                                #output stacked zeros
-                                while SC>0:
-                                    result += '{0:b}'.format(BP)
-                                    BP = 0
-                                    SC-=1
-                                result += '{0:b}'.format(BP)
-                                BP = t
-                            else:
-                                if t == 0xff:
-                                    SC+=1
-                                else:
-                                    #Output_stacked_0xffs
-                                    while SC>0:
-                                        result += '{0:b}'.format(BP)
-                                        BP = 0xff
-                                        result += '{0:b}'.format(BP)
-                                        BP = 0
-                                        SC-=1
-                                    result += '{0:b}'.format(BP)
-                                BP = t
-                            C = C & 0x7ffff
-                            CT = 8
-                            
-            if currInputBit == LPS:
-                A = A-Qc
-                if A>=Qc:
-                    C+=A
-                    A=Qc
-                #change Qn state
-                newSatate = self.__findState(Qc, False)
-
-                if newSatate == None:
-                    LPS,MPS=MPS,LPS
+                    self.LPS,self.MPS=self.MPS,self.LPS        
                 else:
-                    State = newSatate.state
-                    Qc = newSatate.qcHex
-                #renormalize
-                while A < 0x8000:
-                    A<<=1
-                    C<<=1
-                    CT -=1
-                        
-                    if CT == 0:
-                        #byte_out
-                        t = C>>19
-                        if t > 0xff:
-                            BP+=1
-                            #stuff 0
-                            if BP == 0xff:
-                                result += '{0:b}'.format(BP)
-                                BP=0
-                                
-                            #output stacked zeros
-                            while SC>0:
-                                result += '{0:b}'.format(BP)
-                                BP = 0
-                                SC-=1
-                            result += '{0:b}'.format(BP)
-                            BP = t
-                        else:
-                            if t == 0xff:
-                                SC+=1
-                            else:
-                                #Output_stacked_0xffs
-                                while SC>0:
-                                    result += '{0:b}'.format(BP)
-                                    BP = 0xff
-                                    result += '{0:b}'.format(BP)
-                                    BP = 0
-                                    SC-=1
-                                result += '{0:b}'.format(BP)
-                            BP = t
-                        C = C & 0x7ffff
-                        CT = 8
+                    n = -1*int(n) if not isInc else int(n)
+                    self.State = i.state + n
+                    self.Qc = self.qmtable[self.State].qcHex
+                return 
+        raise 'not find next status'
+    
+    def __renormalize_E(self, result:str):
+        while self.A < 0x8000:
+            self.A<<=1
+            self.C<<=1
+            self.CT-=1
+            if self.CT == 0:
+                t = self.C>>19
+                
+                if t > 0xff:
+                    self.BP+=1
 
-
+                    #stuff 0
+                    if self.BP == 0xff:
+                        result += '{0:b}'.format(self.BP)
+                        self.BP = 0
+                    #output stacked zeros
+                    while self.SC >0:
+                        result += '{0:b}'.format(self.BP)
+                        self.BP = 0
+                        self.SC -=1
+                    result += '{0:b}'.format(self.BP)
+                    self.BP = t
+                else:
+                    if t == 0xff:
+                        self.SC +=1
+                    else:
+                        while self.SC >0:
+                            result += '{0:b}'.format(self.BP)
+                            self.BP = 0xff
+                            result += '{0:b}'.format(self.BP)
+                            self.BP = 0
+                            self.SC -=1
+                        result += '{0:b}'.format(self.BP)
+                        self.BP = t
+                self.C &= 0x7ffff
+                self.CT = 8
+        return result
+    def __saveEncodedFile(self,image,result):
         #把少於8個bit的補完
         padbitnum = 8 - len(result) % 8
         padbit = ''
@@ -189,31 +108,50 @@ class QM_Coder:
         with open(newf, 'wb') as f:
             f.write(bytecode)
 
+    def encode(self,image,isGray):
+        #如果是灰階圖就弄成位元平面
+        if isGray:
+            img = bit_plane.Util.gray2bitplane(image,(256,256))
+            img = np.reshape(img,256*256*8)
+        #如果本來就是二值影像就直接讀取
+        else:
+            img = np.fromfile(image,dtype=np.uint8)
+            img = np.reshape(img,256*256)
+
+        result = ''
+        
+        for i in img:
+            currInputBit = str(int(i))
+            if currInputBit == self.MPS:
+                self.A = self.A-self.Qc
+                if self.A<0x8000:
+                    if self.A<self.Qc:
+                        self.C+=self.A
+                        self.A=self.Qc
+                    #change Qn state
+                    self.__ChangeState(True)
+                    #renormalize
+                    result = self.__renormalize_E(result)
+                            
+            if currInputBit == self.LPS:
+                self.A = self.A-self.Qc
+                if self.A>=self.Qc:
+                    self.C+=self.A
+                    self.A=self.Qc
+                #change Qn state
+                self.__ChangeState(False)
+                #renormalize
+                result = self.__renormalize_E(result)
+        
     def decode(self):
         pass
     
-    
 if __name__ == "__main__":
-    basepath ='D:\\Programming\\DataCompression\\hw1'
+    basepath ='E:\\programming\\DataCompression'
     test_imgpath = glob.glob(basepath + '\\Data\\RAW\\*.raw')
     q = QM_Coder()
     for i in test_imgpath:
+        if 'dpcm' in i :
+            continue
         isGray = False if '_b' in i or '_halftone' in i else True
         q.encode(i,isGray)
-        
-    
-    
-'''
-    
-    #壓縮前
-        
-    #壓縮後
-    test_muimipath = glob.glob(basepath + '\\Data\\*.mumi')
-    for i in test_muimipath:
-        
-    
-''' 
-
-
-
-
