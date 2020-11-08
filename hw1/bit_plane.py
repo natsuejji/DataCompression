@@ -2,7 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 class Util:
     @staticmethod
-    def gray2bitplane(filename:str, shape:tuple):
+    def gray2Nbitplane(filename:str, shape:tuple):
+        '''
+            shape -> (x,y)
+        '''
+        
+        result = []
+        img = np.fromfile(filename, dtype=np.uint8)
+        img = np.reshape(img,(shape[0],shape[1]))
+
+        bit = 1
+        for i in range(8):
+            
+            temp = np.bitwise_and(img,bit)
+            temp = np.divide(temp,bit)
+            result.append(temp) 
+            bit <<= 1
+        return result
+    def gray28Cbitplane(filename:str, shape:tuple):
         '''
             shape -> (x,y)
         '''

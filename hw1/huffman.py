@@ -1,8 +1,12 @@
 import io
+import math
 import heapq
 import numpy as np
 import glob
 import matplotlib.pyplot as plt
+'''
+    huffman tree的node的資料結構
+'''
 class t_node:
     def __init__(self, freq, symbol):
         self.freq = freq
@@ -27,10 +31,15 @@ class huffmanEncoder:
         self.data = []
         self.filename = filename
         self.table = {}
+        self.entropy=0
+        self.s_entropy=0
 
         self.__initTree()
         
     def __readRaw(self):
+        '''
+            讀取影像
+        '''
         image = np.fromfile(self.filename, dtype='uint8', count=256*256)
         return image
     
@@ -43,6 +52,12 @@ class huffmanEncoder:
                 data[i] +=1
             else:
                 data[i] = 1
+        #計算entropy
+        for idx, value in data.items():
+            prob = value/(256*256)
+            selfen = -prob * math.log2(prob)
+            #計算source entropy
+            self.s_entropy +=selfen
         
         #轉換成node
         for idx,i in data.items():
@@ -72,7 +87,6 @@ class huffmanEncoder:
         code = 0
         oldcodelen = 0
         
-
         for idx, i in enumerate(self.table):
             i = list(i)
             if len(i[1]) > oldcodelen:
@@ -82,7 +96,6 @@ class huffmanEncoder:
             oldcodelen = len(i[1])
             chuff[i[0]] = i[1]
         self.table = chuff
-        
     def setCodeTable(self, node: t_node, code):
         #用遞迴的方法從root開始記錄每個symbol的Code
         if node.leftnode is not None:
@@ -101,7 +114,6 @@ class huffmanEncoder:
             #每次讀取1KB後從Table找code再接成字串
             byte = f.read(1)
             while byte:
-                ii+=1
                 code += self.table[int.from_bytes(byte, byteorder='big')]
                 byte = f.read(1)
         #設定新擋名
@@ -120,17 +132,18 @@ class huffmanEncoder:
             bytecode.append(int(byte,2))
         with open(newf, 'wb') as f:
 
-
+            tlen = len(self.table)
             #存入codebook長度
             f.write(len(self.table).to_bytes(2,byteorder='big'))
-            
             #存入coodbook
             for key, value in self.table.items():
                 f.write(int(key).to_bytes(1,byteorder='big'))
                 f.write(len(value).to_bytes(1,byteorder='big'))
+                self.entropy+= len(value)/tlen
             #存入檔案內容
             f.write(bytecode)
-
+        #印出entropy
+        print('file : {} source-entropy : {} huffmantree-entropy: {}'.format(self.filename.split('\\')[-1],self.s_entropy,self.entropy))
 class huffmanDecoder:
     '''
         第1個byte是symbol數量

@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import qm
 import glob
+import bit_plane
 import argparse
 
 def rundpcm(raws):
@@ -39,12 +40,31 @@ def runqmencoder(raws):
     print("開始執行qmencoder")
     q = qm.QM_Coder()
     for i in raws:
-        if 'dpcm' in i :
+        if 'dpcm' in i or '_compressed' in i:
             continue
         isGray = False if '_b' in i or '_halftone' in i else True
-        q.encode(i,isGray)
-
+        
+        #如果是灰階圖就弄成位元平面
+        if isGray:
+            img = bit_plane.Util.gray2Nbitplane(i,(256,256))
+            count = 0
+            for j in img:
+                count +=1
+                j = np.reshape(j,256*256)
+                q.encode(j,i,count)    
+            img = bit_plane.Util.gray28Cbitplane(i,(256,256))
+            img = np.reshape(img,256*256*8)
+            q.encode(img,i,0)
+        #如果本來就是二值影像就直接讀取
+        else:
+            img = np.fromfile(i,dtype=np.uint8)
+            img = np.reshape(img,256*256)
+            q.encode(img,i,1)
 def arg():
+    '''
+        設定argument parser
+        rootpath是整個專案的根目錄，要用來存取圖片用的
+    '''
     parser = argparse.ArgumentParser(description='ncu data compression hw1')
     parser.add_argument("--rootpath", help="project root directory",required=True)
     return parser

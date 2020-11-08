@@ -18,5 +18,5 @@
 
     optional arguments:
         -h, --help           show this help message and exit
-        --rootpath ROOTPATH  project root directory
+        --rootpath ROOTPATH  project root directory <-用來存取影片、壓縮後的檔案
 </pre>
