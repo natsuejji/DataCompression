@@ -164,7 +164,7 @@ if __name__ == "__main__":
     for i in test_imgpath:
         if 'dpcm' in i :
             continue
-        isGray = False if '_b' in i or '_halftone' in i else True
+        isGray = False if '_b' in i else True
         
         #如果是灰階圖就弄成位元平面
         if isGray:
