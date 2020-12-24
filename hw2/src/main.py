@@ -1,28 +1,37 @@
 import jpeg_encoder, jpeg_decoder
+import matplotlib.pyplot as plt
 from utils import psnr
+def show_recover_img(recover, img, psnr, img_name, q, is_rgb):
+
+    fig, axes = plt.subplots(1,2)
+    if is_rgb:
+        axes[0].imshow(recover)
+    else:
+        axes[0].imshow(recover, cmap='gray')
+    axes[0].set_title('recovered')
+
+    if is_rgb:
+        axes[1].imshow(img)
+    else:
+        axes[1].imshow(img, cmap='gray')
+
+    axes[1].set_title('target')
+
+    plt.suptitle(f'{img_name} quality : {q} psnr: { str(round(psnr,3))}')
+    plt.show()
+    
 if __name__ == "__main__":
     specs =[
         {
-        'img_path' : 'E:\programming\hw2\TestImages\ColorImages\BaboonRGB.raw',
-        'img_size' : (512,512),
-        'is_rgb' : True,
-        'mode' : [2,2]
-        },
-        {
-        'img_path' : 'E:\programming\hw2\TestImages\ColorImages\LenaRGB.raw',
-        'img_size' : (512,512),
-        'is_rgb' : True,
-        'mode' : [2,2]
-        },{
-        'img_path' : 'E:\programming\hw2\TestImages\GrayImages\Baboon.raw',
+        'img_path' : 'E:\programming\DataCompression\hw2\TestImages\GrayImages\Baboon.raw',
         'img_size' : (512,512),
         'is_rgb' : False,
-        'mode' : [2,2]
+        'mode' : [2]
         },{
-        'img_path' : 'E:\programming\hw2\TestImages\GrayImages\Lena.raw',
+        'img_path' : 'E:\programming\DataCompression\hw2\TestImages\GrayImages\Lena.raw',
         'img_size' : (512,512),
         'is_rgb' : False,
-        'mode' : [2,2]
+        'mode' : [2]
         }
     ] 
     quality = [90,80,50,20,10,5]
@@ -38,6 +47,11 @@ if __name__ == "__main__":
             
             #解壓縮
             recovered_image = jpeg_decoder.extract(data, read_mode=1)
+            
             #計算psnr
             cur_psnr = psnr(image, recovered_image)
+            #畫面比對
+            show_recover_img(recovered_image.astype(int), image, cur_psnr, img_name, q, data[3])
+
+            
             print('img_name: {}, quality : {}, psnr : {}'.format(img_name, q, cur_psnr))

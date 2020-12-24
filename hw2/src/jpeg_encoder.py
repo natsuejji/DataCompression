@@ -147,6 +147,9 @@ def save_result(data):
         if is_rgb:
             output.write(block_num[Cb].to_bytes(4,byteorder='big')) #cb的block數
             output.write(block_num[Cr].to_bytes(4,byteorder='big')) #cr的block數
+        else:
+            output.write((0).to_bytes(4,byteorder='big')) #cb的block數
+            output.write((0).to_bytes(4,byteorder='big')) #cr的block數
 
         output.write(len(dc_data[Y]).to_bytes(4,byteorder='big')) #y dc code長度
         output.write(len(ac_data[Y]).to_bytes(4,byteorder='big')) #y ac code長度

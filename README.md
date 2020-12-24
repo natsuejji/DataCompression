@@ -31,4 +31,4 @@ quality設定為 90,80,50,20,10,5然後比較psnr
 
 #####使用教學
 
-進入hw2/src直接執行main.py
+進入hw2/src更改影像的spec後執行main.py

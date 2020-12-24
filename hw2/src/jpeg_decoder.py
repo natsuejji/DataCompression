@@ -174,9 +174,11 @@ def read_data(img_path):
     return img_size, quality, mode, is_rgb, dc_code, ac_code, block_num, code_len, img_path
 
 def get_samplemode (mode):
-    if mode == 0:
-        return None
-    if mode == 1:
+    if mode == 5:
+        return [1]
+    elif mode == 6:
+        return [2]
+    elif mode == 1:
         return [2,2]
     elif mode == 2:
         return [2,1]
@@ -184,6 +186,8 @@ def get_samplemode (mode):
         return [1,2]
     elif mode == 4:
         return [1,1]
+    else:
+        return None
 
 
 def extract(data, read_mode):
@@ -282,5 +286,5 @@ def extract(data, read_mode):
         img[:,:,1] = decoded_data['g']
         img[:,:,2] = decoded_data['b']
     else:
-        img = decoded_data['r']
+        img = decoded_data[Y]
     return img
